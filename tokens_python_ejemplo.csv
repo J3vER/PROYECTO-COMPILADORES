@@ -1,0 +1,10 @@
+category,value
+reserved,def
+reserved,int
+reserved,float
+operators,=
+operators,+
+operators,-
+delimiters,(
+delimiters,)
+delimiters,:
