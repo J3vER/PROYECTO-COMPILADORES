@@ -1,4 +1,3 @@
-
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, simpledialog
 from datetime import datetime
@@ -49,6 +48,8 @@ class LexicalAnalyzer:
             ("DELIMITADOR", delimiter_pattern if delimiter_pattern else r"(?!)")
         ]
 
+        compiled_patterns = [(token_type, re.compile(pattern)) for token_type, pattern in patterns]
+
         index = 0
 
         while index < len(text):
@@ -58,8 +59,7 @@ class LexicalAnalyzer:
 
             match = None
 
-            for token_type, pattern in patterns:
-                regex = re.compile(pattern)
+            for token_type, regex in compiled_patterns:
                 match = regex.match(text, index)
 
                 if match:
@@ -89,7 +89,14 @@ class App:
         self.text_input = tk.Text(root, height=10)
         self.text_input.pack(fill="x")
 
-        tk.Button(root, text="Analizar", command=self.run_analysis).pack(pady=5)
+        # Contenedor para botones principales (Analizar y Ver Gramática)
+        button_frame = tk.Frame(root)
+        button_frame.pack(pady=5)
+
+        tk.Button(button_frame, text="Analizar", command=self.run_analysis).pack(side="left", padx=5)
+        
+        # NUEVO: Botón permanente en la interfaz para reabrir la consulta de tokens
+        tk.Button(button_frame, text="Ver Tokens Activos", command=self.show_loaded_tokens).pack(side="left", padx=5)
 
         self.tree = ttk.Treeview(root, columns=("Token", "Tipo"), show="headings")
         self.tree.heading("Token", text="Token")
@@ -121,6 +128,12 @@ class App:
             label="Cargar Tokens desde CSV",
             command=self.load_csv_tokens
         )
+        
+        # NUEVO: Opción agregada al menú desplegable para mayor accesibilidad
+        config_menu.add_command(
+            label="Ver Tokens Activos",
+            command=self.show_loaded_tokens
+        )
 
     def load_csv_tokens(self):
         file_path = filedialog.askopenfilename(
@@ -134,6 +147,43 @@ class App:
                 "Carga exitosa",
                 "Tokens cargados correctamente desde CSV."
             )
+            self.show_loaded_tokens()
+
+    def show_loaded_tokens(self):
+        info_window = tk.Toplevel(self.root)
+        info_window.title("Resumen de Gramática Cargada")
+        info_window.geometry("450x350")
+        info_window.transient(self.root)  
+        info_window.grab_set()         
+
+        text_frame = ttk.Frame(info_window)
+        text_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        scrollbar = ttk.Scrollbar(text_frame)
+        scrollbar.pack(side="right", fill="y")
+
+        display_text = tk.Text(text_frame, wrap="word", yscrollcommand=scrollbar.set, font=("Consolas", 10))
+        display_text.pack(side="left", fill="both", expand=True)
+        scrollbar.config(command=display_text.yview)
+
+        reporte = "=========================================\n"
+        reporte += "       TOKENS ACTUALMENTE ACTIVOS        \n"
+        reporte += "=========================================\n\n"
+
+        reporte += f"▶ PALABRAS RESERVADAS ({len(self.analyzer.reserved)}):\n"
+        reporte += (", ".join(sorted(self.analyzer.reserved)) if self.analyzer.reserved else "Ninguna") + "\n\n"
+
+        reporte += f"▶ OPERADORES ({len(self.analyzer.operators)}):\n"
+        reporte += (", ".join(sorted(self.analyzer.operators)) if self.analyzer.operators else "Ninguno") + "\n\n"
+
+        reporte += f"▶ DELIMITADORES ({len(self.analyzer.delimiters)}):\n"
+        reporte += (", ".join(sorted(self.analyzer.delimiters)) if self.analyzer.delimiters else "Ninguno") + "\n\n"
+        reporte += "========================================="
+
+        display_text.insert("1.0", reporte)
+        display_text.config(state="disabled")
+
+        ttk.Button(info_window, text="Entendido", command=info_window.destroy).pack(pady=5)
 
     def add_reserved(self):
         word = simpledialog.askstring("Agregar", "Nueva palabra reservada:")
@@ -203,18 +253,18 @@ class App:
 
     def export_txt(self, text, tokens, errors):
         with open("resultado.txt", "a", encoding="utf-8") as f:
-            f.write("\\n--- ANALISIS ---\\n")
-            f.write(f"Fecha: {datetime.now()}\\n")
-            f.write(f"Entrada: {text}\\n")
-            f.write("Tokens:\\n")
+            f.write("\n--- ANALISIS ---\n")
+            f.write(f"Fecha: {datetime.now()}\n")
+            f.write(f"Entrada: {text}\n")
+            f.write("Tokens:\n")
 
             for token, token_type in tokens:
-                f.write(f"{token} -> {token_type}\\n")
+                f.write(f"{token} -> {token_type}\n")
 
             if errors:
-                f.write(f"Errores: {errors}\\n")
+                f.write(f"Errores: {errors}\n")
 
-            f.write("----------------\\n")
+            f.write("----------------\n")
 
 
 if __name__ == "__main__":
