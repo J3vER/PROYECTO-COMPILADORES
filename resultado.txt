@@ -1,0 +1,10 @@
+
+--- ANALISIS ---
+Fecha: 2026-05-31 16:13:44.815928
+Entrada: int juan;
+
+Tokens:
+int -> IDENTIFICADOR
+juan -> IDENTIFICADOR
+; -> DELIMITADOR
+----------------
